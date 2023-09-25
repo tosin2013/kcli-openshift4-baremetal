@@ -138,10 +138,10 @@ contrail-ctl:
  - ztp/scripts/spokes_deploy.sh
 {% else %}
  - ztp/scripts/siteconfig_requirements.sample.yml
+ - ztp/scripts/kustomization.yml
  - ztp/scripts/siteconfig.sample.yml
  - ztp/scripts/siteconfig.sh
  - ztp/scripts/spokes_deploy_siteconfig.sh
- - ztp/scripts/bmc_siteconfig.sh
 {% endif %}
  - ztp/assisted
 {% if argocd %}

@@ -1,5 +1,4 @@
 bash /root/ztp/scripts/siteconfig.sh
-bash /root/ztp/scripts/bmc_siteconfig.sh
 oc apply -f /root/spokes.yml
 {% for spoke in ztp_spokes %}
 {% set spoke_deploy = spoke.get('deploy', ztp_spoke_deploy) %}
