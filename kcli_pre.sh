@@ -32,6 +32,34 @@ if [ ! -d /Users ] && [ -n "$(which ipcalc)" ] ; then
 fi
 {% endif %}
 
+{% if dual_api_ip != None and dual_ingress_ip == None %}
+echo dual_api_ip set but not dual_ingress_ip. No network, no party!
+exit 1
+{% elif dual_ingress_ip != None and dual_api_ip == None %}
+echo dual_ingress_ip set but not dual_api_ip. No network, no party!
+exit 1
+{% elif dual_api_ip != None and dual_api_ip == dual_ingress_ip %}
+echo dual_api_ip and dual_ingress_ip cant be set to the same value
+exit 1
+{% elif dual_api_ip != None and dualstack_cidr == None %}
+echo dualstack_cidr needs to be set along with dual_api_ip
+exit 1
+{% elif dual_api_ip != None and dual_ingress_ip != None %}
+if [ ! -d /Users ] && [ -n "$(which ipcalc)" ] ; then
+  {% set dual_prefix = dualstack_cidr.split('/')[1] %}
+  dual_api_cidr=$(ipcalc {{ dual_api_ip }}/{{ dual_prefix }} | grep ^Network: | sed 's/Network://' | xargs)
+  if [ "$dual_api_cidr" != "{{ dualstack_cidr }}" ] ; then
+   echo {{ dual_api_ip }} doesnt belong to to {{ dualstack_cidr }}
+   exit 1
+  fi
+  dual_ingress_cidr=$(ipcalc {{ dual_ingress_ip }}/{{ dual_prefix }} | grep ^Network: | sed 's/Network://' | xargs)
+  if [ "$dual_ingress_cidr" != "{{ dualstack_cidr }}" ] ; then
+    echo {{ dual_ingress_ip }} doesnt belong to to {{ dualstack_cidr }}
+    exit 1
+  fi
+fi
+{% endif %}
+
 {% if dualstack %}
 {% if ':' in baremetal_cidr %}
 echo baremetal_cidr needs to be ipv4 for dual stack
@@ -112,11 +140,18 @@ echo disconnected_password will be forced to super{{ disconnected_password }}
 {% set spoke_api_ip = spoke.get('api_ip') %}
 {% set spoke_ingress_ip= spoke.get('ingress_ip') %}
 {% set spoke_ctlplanes_number = spoke.get('ctlplanes_number', 1) %}
+{% set spoke_workers_number = spoke.get('workers_number', 0) %}
 {% set virtual_nodes_number = spoke["virtual_nodes_number"]|default(0) %}
 {% if spoke_name == None %}
 echo spoke_name needs to be on each entry of ztp_spokes && exit 1
 {% elif '_' in spoke_name %}
 echo Incorrect spoke_name {{ spoke_name }}: cant contain an underscore && exit 1
+{% endif %}
+{% if spoke_ctlplanes_number <= 0 %}
+echo Incorrect spoke_ctlplanes_number {{ spoke_ctlplanes_number }} in {{ spoke_name }}: must be higher than 0 && exit 1
+{% endif %}
+{% if spoke_workers_number < 0 %}
+echo Incorrect spoke_workers_number {{ spoke_workers_number }} in {{ spoke_name }}: cant be negative && exit 1
 {% endif %}
 {% if spoke_ctlplanes_number > 1 %}
 {% if spoke_api_ip == None %}
@@ -147,11 +182,11 @@ CLUSTER={{ cluster }}
 POOL={{ pool }}
 POOLPATH=$(kcli -C $CLIENT list pool | grep $POOL | cut -d"|" -f 3 | xargs)
 export LC_ALL="en_US.UTF-8"
-export LIBVIRT_DEFAULT_URI=$(kcli -C $CLIENT info host | grep Connection | sed 's/Connection: //')
+export LIBVIRT_DEFAULT_URI=$(kcli -C $CLIENT info host | grep onnection | awk '{print $2}')
 TWODAYSAGO=$(date -d '2 days ago' +%s)
 for volume in $(virsh vol-list $POOL | grep boot-* | awk '{print $2}') ; do
   VOLXML=$(virsh vol-dumpxml $volume)
-  [ -z $VOLXML ] && continue
+  [ -z "$VOLXML" ] && continue
   VOLDATE=$(echo $VOLXML | sed 's@.*<ctime>\(.*\)</ctime>.*@\1@')
   VOLDATE=$(date -d @$VOLDATE +%s)
   (($VOLDATE < $TWODAYSAGO)) && virsh vol-delete $volume

@@ -13,7 +13,7 @@ echo export SPOKE={{ spoke_name }} >> /root/.bashrc
 {% if spoke_ctlplanes_number > 1 and spoke_api_ip != None and spoke_ingress_ip != None %}
 echo {{ spoke_api_ip}} api.{{ spoke_name }}.{{ domain }} >> /etc/hosts
 {% endif %}
-OCP_RELEASE=$(/root/bin/openshift-baremetal-install version | head -1 | cut -d' ' -f2)-x86_64
+OCP_RELEASE=$(openshift-install version | head -1 | cut -d' ' -f2)-x86_64
 export MINOR=$(echo $OCP_RELEASE | cut -d. -f1,2)
 export PULLSECRET=$(cat /root/openshift_pull.json | tr -d [:space:])
 export SPOKE={{ spoke_name }}
@@ -22,8 +22,6 @@ export DOMAIN={{ domain }}
 export MASTERS_NUMBER={{ spoke_ctlplanes_number }}
 export WORKERS_NUMBER={{ spoke_workers_number }}
 export SSH_PUB_KEY=$(cat /root/.ssh/id_rsa.pub)
-
-[ -f /root/spoke_$SPOKE/contrail.sh ] && /root/spoke_$SPOKE/contrail.sh
 
 [ -d /root/spoke_$SPOKE/manifests ] && /root/spoke_$SPOKE/manifests.sh
 envsubst < /root/spoke_$SPOKE/spoke.sample.yml >> /root/spoke_$SPOKE/spoke.yml

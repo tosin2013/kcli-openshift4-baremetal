@@ -21,7 +21,7 @@ echo -e "${blue}************ RUNNING 01_patch_installconfig.sh ************${cle
 echo -e "${blue}************ RUNNING 02_packages.sh ************${clear}"
 /root/scripts/02_packages.sh
 
-MINOR=$(/root/bin/openshift-baremetal-install version | head -1 | cut -d' ' -f2 | cut -d. -f2)
+MINOR=$(openshift-install version | grep openshift-install | cut -d' ' -f2 | cut -d. -f2)
 if [ "$MINOR" -lt "10" ] ; then
 echo -e "${blue}************ RUNNING 03_cache.sh ************${clear}"
 /root/scripts/03_cache.sh
@@ -29,7 +29,7 @@ fi
 
 {% if disconnected %}
 {% if disconnected_url == None %}
-echo -e "${blue}************ RUNNING 04_disconnected_{{ 'quay.sh' if disconnected_quay else 'registry.sh' }}.sh ************${clear}"
+echo -e "${blue}************ RUNNING 04_disconnected_{{ 'quay.sh' if disconnected_quay else 'registry.sh' }} ************${clear}"
 /root/scripts/04_disconnected_{{ 'quay.sh' if disconnected_quay else 'registry.sh' }} || exit 1
 {% endif %}
 echo -e "${blue}************ RUNNING 04_disconnected_mirror.sh ************${clear}"
