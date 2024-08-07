@@ -1,10 +1,8 @@
 info: |
     This deploys a vm where
-    - openshift-install is downloaded
-    - caches rhcos bootstrap image
     - stop the nodes to deploy through redfish
     - launch the install against a set of baremetal nodes (and optionally virtual ctlplanes)
-    It can be used with a centos8stream or rhel8 vm (which required to set rhn credentials in your kcli config)
+    It can be used with a centos stream or rhel vm (which required to set rhn credentials in your kcli config)
     default location for pull secret is openshift_pull.json unless overriding with pullsecret variable
     api_ip and ingress_ip need to be set along with ctlplanes and workers array to specify your nodes.
     Nfs can be set to true to deploy nfs provisioner using a share on the installer vm
@@ -17,7 +15,7 @@ info: |
     version can be set to stable, nightly, dev-preview or ci , along with tag, to gather the binary from public sources.
     The ci registry is targetted with the openshift_image variable.
 baseplan: kcli_plan_infra.yml
-image: centos8stream
+image: centos9stream
 image_url:
 installer_disk_size:
 installer_numcpus:
@@ -26,7 +24,7 @@ installer_ip:
 installer_mac:
 installer_wait: False
 version: stable
-tag: 4.15
+tag: "4.16"
 openshift_image:
 network_type: OVNKubernetes
 dualstack: false
@@ -39,12 +37,6 @@ image_url:
 numcpus: 16   
 rhnregister: true
 rhnwait: 30
-baremetal_noprovisioning_ip:
-baremetal_noprovisioning_bootstrap_ip:
-baremetal_bootstrap_mac:
-baremetal_bootstrap_ip:
-baremetal_bootstrap_os_image:
-baremetal_cluster_os_image:
 bmc_user: root
 bmc_password: calvin
 bmc_reset: false
@@ -53,7 +45,6 @@ baremetal_macs: []
 baremetal_ips: []
 pullsecret: openshift_pull.json
 notifyscript: scripts/notify.sh
-virtual_protocol: ipmi
 notify: false
 launch_steps: true
 deploy_openshift: true
@@ -87,8 +78,6 @@ cas: []
 nbde: false
 ntp: false
 ntp_server: 0.rhel.pool.ntp.org
-model: dell
-patch_rhcos_image: false
 apps: []
 localhost_fix: false
 virtual_ctlplanes_static_network: False
@@ -106,4 +95,4 @@ wait_for_workers: true
 wait_for_workers_number:
 wait_for_workers_timeout: 3600
 manifests_dir: manifests
-wait_for_workers_exit_if_error: false
+workflow_installer: false

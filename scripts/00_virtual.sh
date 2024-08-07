@@ -8,7 +8,7 @@ dnf clean all
 sleep 30
 {% endif %}
 echo "fastestmirror=1" >> /etc/dnf/dnf.conf
-dnf -y install pkgconf-pkg-config libvirt-devel gcc python3-libvirt python3 git python3-netifaces
+dnf -y install pkgconf-pkg-config gcc python3-libvirt python3 git python3-netifaces
 
 dnf -y copr enable karmab/kcli
 dnf -y install kcli
@@ -20,9 +20,5 @@ ssh-keyscan -H {{ config_host if config_host not in ['127.0.0.1', 'localhost'] e
 echo -e "Host=*\nStrictHostKeyChecking=no\n" > /root/.ssh/config
 IP=$(ip -o addr show $PRIMARY_NIC | head -1 | awk '{print $4}' | cut -d "/" -f 1 | head -1)
 echo $IP | grep -q ':' && IP=[$IP]
-sed -i "s/CHANGEME/$IP/" /root/install-config.yaml
 
-api_vip=$(grep -A 1 apiVIPs /root/install-config.yaml | tail -1 | awk '{print $NF}')
-cluster=$(grep -m 1 name /root/install-config.yaml | awk -F: '{print $2}' | xargs)
-domain=$(grep baseDomain /root/install-config.yaml | awk -F: '{print $2}' | xargs)
-echo $api_vip api.$cluster.$domain >> /etc/hosts
+echo {{ api_ip }} api.{{ cluster }}.{{ domain }} >> /etc/hosts

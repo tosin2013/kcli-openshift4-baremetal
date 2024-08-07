@@ -1,6 +1,6 @@
 lab: true
 version: stable
-tag: "4.15"
+tag: "4.16"
 virtual_protocol: redfish
 virtual_ctlplanes: false
 launch_steps: true
@@ -30,7 +30,6 @@ baremetal_macs:
 localhost_fix: true
 lab_dhcp: false
 installer_ip: 192.168.130.250
-baremetal_bootstrap_ip: 192.168.130.251
 notify: true
 nfs: true
 vmrules:

@@ -1,10 +1,7 @@
-{% for spoke in ztp_spokes %}
-{% set spoke_deploy = spoke.get('deploy', ztp_spoke_deploy) %}
-{% if spoke_deploy %}
-SPOKE={{ spoke.name }}
-test -f /root/kubeconfig.$SPOKE || bash /root/spoke_$SPOKE/spoke.sh
-{% endif %}
-{% endfor %}
+export HOME=/root
+export PYTHONUNBUFFERED=true
+bash /root/ztp/scripts/siteconfig.sh
+oc apply -f /root/spokes.yml
 {% for spoke in ztp_spokes %}
 {% set spoke_deploy = spoke.get('deploy', ztp_spoke_deploy) %}
 {% set spoke_ctlplanes_number = spoke.get('ctlplanes_number', 1) %}
@@ -12,6 +9,7 @@ test -f /root/kubeconfig.$SPOKE || bash /root/spoke_$SPOKE/spoke.sh
 {% if spoke_deploy and spoke.get('wait', ztp_spoke_wait) %}
 {% set spoke_wait_time = spoke.get('wait_time', ztp_spoke_wait_time) %}
 SPOKE={{ spoke.name }}
+kcli delete iso -y $SPOKE.iso || true
 timeout=0
 installed=false
 failed=false

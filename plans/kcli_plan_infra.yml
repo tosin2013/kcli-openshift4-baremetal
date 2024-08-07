@@ -12,7 +12,9 @@
 {% endif %}
 {% endif %}
 
-{% if lab or (baremetal_ips and baremetal_ips|length >0) %}
+{% if lab and ((api_ip != None and ingress_ip != None) or (baremetal_ips and baremetal_ips|length > 0)) %}
+{% set api_ip = api_ip or baremetal_ips[0] %}
+{% set ingress_ip = ingress_ip or baremetal_ips[0] %}
 api:
  type: dns
  net: {{ baremetal_net }}
@@ -30,6 +32,9 @@ apps:
  - oauth-openshift.apps.{{ cluster }}.{{ domain }}
  - prometheus-k8s-openshift-monitoring.apps.{{ cluster }}.{{ domain }}
  - canary-openshift-ingress-canary.apps.{{ cluster }}.{{ domain }}
+ - assisted-service-multicluster-engine.apps.{{ cluster }}.{{ domain }}
+ - assisted-service-assisted-installer.apps.{{ cluster }}.{{ domain }}
+ - assisted-image-service-multicluster-engine.apps.{{ cluster }}.{{ domain }}
 {% for entry in lab_extra_dns %}
  - {{ entry }}.apps.{{ cluster }}.{{ domain }}
 {% endfor %}
@@ -39,6 +44,7 @@ apps:
 {% for num in range(0, virtual_ctlplanes_number) %}
 {{ cluster }}-ctlplane-{{ num }}:
  pool: {{ pool }} 
+ redfish_iso: {{ cluster }}.iso
  image:
  numcpus: {{ virtual_ctlplanes_numcpus }}
  cloudinit: false
@@ -65,6 +71,7 @@ apps:
 {% for num in range(0, virtual_workers_number) %}
 {{ cluster }}-worker-{{ num }}:
  pool: {{ pool }} 
+ redfish_iso: {{ cluster }}.iso
  image:
  numcpus: {{ virtual_workers_numcpus }}
  start: false

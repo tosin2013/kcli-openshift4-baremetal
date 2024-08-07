@@ -1,6 +1,8 @@
+{% if image_url != None %}
 {{ image }}:
  type: image
  url: {{ image_url }}
+{% endif %}
 
 {{ cluster }}-installer: 
  image: {{ image }} 
@@ -21,7 +23,7 @@
 {% if deploy_openshift %}
  notifyscript: {{ notifyscript }}
 {% elif launch_steps %}
- notifycmd: openshift-install version
+ notifycmd: oc get clusterversion
 {% else %}
  notifycmd: echo machine $(hostname) ready at $(hostname -I)
 {% endif %}
@@ -43,25 +45,25 @@
  disks:
  - {{ installer_disk_size or disk_size }}
  files:
- - install-config.yaml                                                                                                                           
+ - agent-config.yaml 
+ - install-config.yaml 
 {% if motd != None %}
  - path: /etc/motd
    origin: {{ motd }}
 {% endif %}
-{% if baremetal_bootstrap_ip != None %}
- - static_network/ifcfg-bootstrap
-{% endif %}
  - path: /root/.bashrc
    origin: envfiles/bashrc
+{% if not offline|default(False) and not workflow_installer %}
  - path: /root/.kcli/config.yml
    origin: bin/kcli_config.yml
+{% endif %}
 {% if disconnected_quay and ':' in baremetal_cidr %}
  - path: /usr/lib/systemd/system/quay-haproxy.service
    origin: mirror-registry/quay_haproxy.service
  - mirror-registry/quay_haproxy.cfg
 {% endif %}
  - origin: {{ pullsecret }}
-   path: /root/openshift_pull.json                                                                                                                    
+   path: /root/openshift_pull.json
  - path: /etc/systemd/system/registry.service
    origin: bin/registry.service
 {% for ca in cas %}
@@ -75,9 +77,9 @@
    origin: envfiles/proxy.sh
    mode: 644
 {% endif %}
-{% if baremetal_bootstrap_ip != None %}
- - static_network/ifcfg-bootstrap
-{% endif %}
+ - path: /root/bin/mapping_to_icsp.py
+   origin: bin/mapping_to_icsp.py
+   render: false
  - bin
  - scripts
  - machineconfigs
