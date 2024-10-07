@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: site-data-configmap
+  namespace: ztp-policies
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true
+data:
+  mgmt-spoke1-resourcename1: "enp2s0"
+  mgmt-spoke1-sriovnic1: "enp2s0"

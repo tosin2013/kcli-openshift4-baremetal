@@ -1,8 +1,38 @@
-{% if image_url != None %}
-{{ image }}:
- type: image
- url: {{ image_url }}
+{% if acm and 'advanced-cluster-management' not in disconnected_operators %}
+{{ disconnected_operators.append("advanced-cluster-management") or "" }}
 {% endif %}
+
+{% if acm and 'multicluster-engine' not in disconnected_operators %}
+{{ disconnected_operators.append("multicluster-engine") or "" }}
+{% endif %}
+
+{% if 'openshift-gitops-operator' not in disconnected_operators %}
+{{ disconnected_operators.append("openshift-gitops-operator") or "" }}
+{% endif %}
+
+{% if 'topology-aware-lifecycle-manager' not in disconnected_operators %}
+{{ disconnected_operators.append("topology-aware-lifecycle-manager") or "" }}
+{% endif %}
+
+{% if spokes|length > 0 and 'sriov-network-operator' not in disconnected_operators %}
+{{ disconnected_operators.append("sriov-network-operator") or "" }}
+{% endif %}
+
+{% if spokes|length > 0 and 'lvms-operator' not in disconnected_operators %}
+{{ disconnected_operators.append("lvms-operator") or "" }}
+{% endif %}
+
+{% set snoplus_spokes = [] %}
+
+{% for spoke in spokes %}
+{% set spoke_name = spoke.name %}
+{% set spoke_ctlplanes_number = spoke.get('ctlplanes', 1) %}
+{% set spoke_workers_number = spoke.get('workers', 0) %}
+{% set spoke_snoplus = True if spoke_ctlplanes_number == 1 and spoke_workers_number == 1 else False %}
+{% if spoke_snoplus %}
+{% do snoplus_spokes.append(spoke_name) %}
+{% endif %}
+{% endfor %}
 
 {{ cluster }}-installer: 
  image: {{ image }} 
@@ -18,9 +48,9 @@
 {% endif %}
  networkwait: {{ rhnwait }}
  memory: {{ installer_memory or memory }}
- privatekey: true
+ privatekey: {{ virtual_hub and config_type == 'kvm' }}
  notify: {{ notify }}
-{% if deploy_openshift %}
+{% if deploy_hub %}
  notifyscript: {{ notifyscript }}
 {% elif launch_steps %}
  notifycmd: oc get clusterversion
@@ -35,8 +65,8 @@
 {% if installer_ip != None %}
    ip: {{ installer_ip }}
    mask: {{ baremetal_cidr.split('/')[1] }}
-   gateway: {{ static_baremetal_gateway or baremetal_cidr|network_ip(1 if lab else -2) }}
-   dns: {{ static_baremetal_dns or static_baremetal_gateway or baremetal_cidr|network_ip(1 if lab else -2) }}
+   gateway: {{ static_baremetal_gateway or baremetal_cidr|network_ip(1 if fake_network else -2) }}
+   dns: {{ static_baremetal_dns or static_baremetal_gateway or baremetal_cidr|network_ip(1 if fake_network else -2) }}
 {% endif %}
    ipv6: {{ true if baremetal_cidr != None and ':' in baremetal_cidr else false }}
 {% if baremetal_cidr != None and ':' in baremetal_cidr and (not dualstack or dualstack and dualstack_isolated) %}
@@ -45,6 +75,10 @@
  disks:
  - {{ installer_disk_size or disk_size }}
  files:
+{% if KUBECONFIG != None %}
+ - origin: {{ KUBECONFIG }}
+   path: /root/ocp/auth/kubeconfig
+{% endif %}
  - agent-config.yaml 
  - install-config.yaml 
 {% if motd != None %}
@@ -62,7 +96,7 @@
    origin: mirror-registry/quay_haproxy.service
  - mirror-registry/quay_haproxy.cfg
 {% endif %}
- - origin: {{ pullsecret }}
+ - origin: {{ pull_secret }}
    path: /root/openshift_pull.json
  - path: /etc/systemd/system/registry.service
    origin: bin/registry.service
@@ -90,6 +124,38 @@
 {% if installer_mac != None and ':' in api_ip|default('') %}
  - path: /etc/NetworkManager/conf.d/kcli-ipv6.conf
    origin: envfiles/kcli-ipv6.conf
+{% endif %}
+{% if dns %}
+ - dnsmasq.conf
+{% endif %}
+ - ztp/scripts/launch_steps.sh
+ - ztp/scripts/01_assisted-service.sh
+ - ztp/scripts/02_git.sh
+ - ztp/scripts/03_spokes_deploy.sh
+ - ztp/scripts/04_spokes_wait.sh
+ - ztp/scripts/05_snoplus.sh
+ - ztp/scripts/06_compliance.sh
+ - ztp/scripts/gitops
+ - ztp/scripts/generate_gitops.sh
+ - ztp/scripts/requirements.sample.yml
+ - ztp/scripts/siteconfig.sample.yml
+ - ztp/scripts/kustomization.yaml
+ - ztp/scripts/kube_compare.sh
+ - ztp/scripts/kube_compare_metadata.yaml
+ - path: /root/ztp/scripts/kubeconfig.sh
+   origin: ztp/scripts/kubeconfig.sh
+ - ztp/scripts/gitea.service
+{% if snoplus_spokes %}
+ - path: /root/ztp/scripts/snoplus.txt
+   content: |
+{% for spoke in snoplus_spokes %}
+     {{ spoke }}
+{% endfor %}
+{% endif %}
+{% if spoke_policies_dir|exists %}
+ - origin: {{ spoke_policies_dir }}
+   path: /root/ztp/scripts/site-policies
+   render: false
 {% endif %}
 {% if launch_steps %}
  cmds:

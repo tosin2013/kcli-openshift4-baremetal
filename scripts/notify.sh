@@ -9,9 +9,8 @@ echo "Cluster info:"
 oc get clusterversion
 echo "Nodes info:"
 oc get nodes
-{% if ztp_spokes is defined %}
 echo -e "\nSpokes:\n"
-{% for spoke in ztp_spokes %}
+{% for spoke in spokes %}
 export SPOKE={{ spoke.name }}
 echo "Spoke $SPOKE"
 echo "Agents:"
@@ -21,4 +20,8 @@ oc get agentclusterinstall -n $SPOKE $SPOKE -o jsonpath={'.status.debugInfo.stat
 echo "Cluster Info:"
 oc get agentclusterinstall -n $SPOKE $SPOKE -o jsonpath={'.status.debugInfo.stateInfo'}
 {% endfor%}
-{% endif %}
+
+echo -e "\nPolicies:\n"
+if [ -d /root/ztp/scripts/site-policies ] ; then
+oc get policies -A
+fi

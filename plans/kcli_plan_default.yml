@@ -3,7 +3,7 @@ info: |
     - stop the nodes to deploy through redfish
     - launch the install against a set of baremetal nodes (and optionally virtual ctlplanes)
     It can be used with a centos stream or rhel vm (which required to set rhn credentials in your kcli config)
-    default location for pull secret is openshift_pull.json unless overriding with pullsecret variable
+    default location for pull secret is openshift_pull.json unless overriding with pull_secret variable
     api_ip and ingress_ip need to be set along with ctlplanes and workers array to specify your nodes.
     Nfs can be set to true to deploy nfs provisioner using a share on the installer vm
     default network type is OVNKubernetes but you can also specify OpenShiftSDN
@@ -14,17 +14,17 @@ info: |
     - set a pattern for their provisioning macs when you plan to host several cluster with virtual ctlplanes on the same hypervisor
     version can be set to stable, nightly, dev-preview or ci , along with tag, to gather the binary from public sources.
     The ci registry is targetted with the openshift_image variable.
+    To skip the hub installation, KUBECONFIG variable can be pointed to an existing kubeconfig file
 baseplan: kcli_plan_infra.yml
 image: centos9stream
-image_url:
 installer_disk_size:
 installer_numcpus:
 installer_memory:
 installer_ip:
 installer_mac:
-installer_wait: False
+installer_wait: false
 version: stable
-tag: "4.16"
+tag: "4.17"
 openshift_image:
 network_type: OVNKubernetes
 dualstack: false
@@ -33,7 +33,6 @@ dualstack_isolated: false
 http_proxy:
 no_proxy:
 keys: []
-image_url:
 numcpus: 16   
 rhnregister: true
 rhnwait: 30
@@ -43,12 +42,11 @@ bmc_reset: false
 baremetal_cidr:
 baremetal_macs: []
 baremetal_ips: []
-pullsecret: openshift_pull.json
+pull_secret: openshift_pull.json
 notifyscript: scripts/notify.sh
 notify: false
 launch_steps: true
-deploy_openshift: true
-lab: false
+deploy_hub: true
 motd:
 disconnected: false
 disconnected_quay: false
@@ -60,7 +58,7 @@ disconnected_operators: []
 disconnected_certified_operators: []
 disconnected_community_operators: []
 disconnected_marketplace_operators: []
-disconnected_operators_deploy_after_openshift: False
+disconnected_operators_deploy_after_openshift: false
 disconnected_operators_version:
 disconnected_community_operators_version:
 disconnected_marketplace_operators_version:
@@ -68,6 +66,7 @@ disconnected_certified_operators_version:
 disconnected_extra_images: []
 disconnected_extra_catalogs: []
 disconnected_extra_releases: []
+disconnected_clean_pull_secret: false
 nfs: false
 imageregistry: false
 go_version: 1.13.8
@@ -75,14 +74,14 @@ prs: []
 imagecontentsources: []
 fips: false
 cas: []
+dns: false
 nbde: false
 ntp: false
 ntp_server: 0.rhel.pool.ntp.org
 apps: []
 localhost_fix: false
-virtual_ctlplanes_static_network: False
-virtual_workers_static_network: False
-schedulable_ctlplanes: False
+static_network: false
+schedulable_ctlplanes: false
 cpu_partitioning: false
 static_baremetal_gateway:
 static_baremetal_dns:
@@ -96,3 +95,26 @@ wait_for_workers_number:
 wait_for_workers_timeout: 3600
 manifests_dir: manifests
 workflow_installer: false
+
+acm: true
+gitops_user: dummy
+gitops_password: dummy
+gitops_repo_branch: main
+gitops_repo_url:
+gitops_clusters_app_path: site-configs
+gitops_policies_app_path: site-policies
+spoke_policies_dir: spoke_policies_dir
+spoke_deploy: true
+spoke_network_type: OVNKubernetes
+spoke_wait: true
+spoke_wait_time: 3600
+converged_flow: false
+disable_validations: true
+spoke_domain:
+spoke_static_network: false
+KUBECONFIG:
+cluster_network_ipv4: "10.132.0.0/14"
+cluster_network_ipv6: "fd01::/48"
+service_network_ipv4: "172.30.0.0/16"
+service_network_ipv6: "fd02::/112"
+apps_install_cr: false
