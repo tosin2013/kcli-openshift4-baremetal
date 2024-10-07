@@ -8,6 +8,7 @@ import time
 import requests
 import yaml
 
+REDFISH_ENDPOINT = "http://localhost:9000/redfish/v1/Managers"
 INSTALL_CONFIG = "/root/install-config.yaml"
 OC = "/root/bin/oc"
 BMC_WAIT_TIMEOUT = 300
@@ -45,7 +46,7 @@ def get_cmd_data(cmd):
 def wait_for_bmc(bmc_ip):
     # Give it a time to start reboot
     time.sleep(60)
-    url = f"https://{bmc_ip}/redfish/v1/"
+    url = f"http://{bmc_ip}:9000/redfish/v1/"
     web_res = None
     try:
         web_res = requests.get(url, verify=False, timeout=10)
@@ -69,12 +70,11 @@ def wait_for_bmc(bmc_ip):
 
 
 def reboot_bmc(name, skip_wait_bmc):
-    # TODO(sshnaidm): Add support for HP BMs
-    auth = ('root', 'calvin')
+    # Use the REDFISH_ENDPOINT for interacting with the BMC
+    auth = ('root', 'password')
     headers = {'Accept': 'application/json',
                'Content-Type': 'application/json'}
-    url = ("https://%s"
-           "/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Manager.Reset")
+    url = f"{REDFISH_ENDPOINT}/Actions/Manager.Reset"
     install = load_yaml(INSTALL_CONFIG)
     for host in install['platform']['baremetal']['hosts']:
         if host['name'] == name:
